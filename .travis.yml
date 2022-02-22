@@ -1,0 +1,25 @@
+sudo: required
+language: generic
+services:
+    - docker
+
+before_install:
+    - docker build -t tuckergbarton/react-test -f ./frontend/Dockerfile.dev ./frontend
+
+script:
+    - docker run -e CI=true tuckergbarton/react-test npm test
+
+after_success:
+    - docker build -t tuckergbarton/multi-frontend ./frontend
+    - docker build -t tuckergbarton/multi-nginx ./nginx
+    - docker build -t tuckergbarton/multi-server ./server
+    - docker build -t tuckergbarton/multi-worker ./worker
+
+    # Log in to the Docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+    # Take those images and push them to Docker Hub
+    - docker push tuckergbarton/multi-frontend
+    - docker push tuckergbarton/multi-nginx
+    - docker push tuckergbarton/multi-server
+    - docker push tuckergbarton/multi-worker
